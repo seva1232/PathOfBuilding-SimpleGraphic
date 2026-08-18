@@ -1,4 +1,24 @@
-# Path of Building Community SimpleGraphic.dll
+# Path of Building Community — native macOS preview
+
+An experimental native Apple Silicon build of Path of Building Community,
+powered by ANGLE's Metal backend. It runs as a regular self-contained macOS
+application: Wine and a separate Path of Building checkout are not required.
+
+[Download macOS Preview 1](https://github.com/seva1232/PathOfBuilding-SimpleGraphic/releases/tag/macos-preview-1)
+
+Current status:
+
+- Apple Silicon (`arm64`) and macOS 13 or newer
+- the full Path of Building Lua application is bundled into the `.app`
+- local builds receive an ad-hoc signature
+- the preview release is not notarised yet, so macOS may require opening it
+  through the Finder context menu on first launch
+
+This is an unofficial fork of
+[PathOfBuildingCommunity/PathOfBuilding-SimpleGraphic](https://github.com/PathOfBuildingCommunity/PathOfBuilding-SimpleGraphic).
+Bug reports and reproducible macOS test results are welcome.
+
+## SimpleGraphic host
 
 ## Introduction
 

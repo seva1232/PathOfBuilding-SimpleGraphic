@@ -2,7 +2,7 @@
     "versions": [
       {
         "version-date": "2026-07-20",
-        "port-version": 1,
+        "port-version": 3,
         "path": "$/ports/luajit/2026-07-20_1"
       },
       {

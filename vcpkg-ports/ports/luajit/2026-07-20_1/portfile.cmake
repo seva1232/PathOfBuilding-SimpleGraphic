@@ -45,7 +45,7 @@ if(VCPKG_DETECTED_MSVC)
     vcpkg_copy_pdbs()
 else()
     vcpkg_list(SET options)
-    if(VCPKG_CROSSCOMPILING)
+    if(VCPKG_CROSSCOMPILING AND NOT HOST_TRIPLET MATCHES "^${VCPKG_TARGET_ARCHITECTURE}-")
         list(APPEND options
             "LJARCH=${VCPKG_TARGET_ARCHITECTURE}"
             "BUILDVM_X=${CURRENT_HOST_INSTALLED_DIR}/manual-tools/${PORT}/buildvm-${VCPKG_TARGET_ARCHITECTURE}${VCPKG_HOST_EXECUTABLE_SUFFIX}"
@@ -76,6 +76,11 @@ else()
     endif()
 
     file(COPY "${CMAKE_CURRENT_LIST_DIR}/configure" DESTINATION "${SOURCE_PATH}")
+    file(CHMOD "${SOURCE_PATH}/configure" FILE_PERMISSIONS
+        OWNER_READ OWNER_WRITE OWNER_EXECUTE
+        GROUP_READ GROUP_EXECUTE
+        WORLD_READ WORLD_EXECUTE
+    )
     vcpkg_configure_make(SOURCE_PATH "${SOURCE_PATH}"
         COPY_SOURCE
         OPTIONS

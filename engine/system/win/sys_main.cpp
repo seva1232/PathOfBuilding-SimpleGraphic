@@ -657,6 +657,17 @@ sys_main_c::sys_main_c()
 
 bool sys_main_c::Run(int argc, char** argv)
 {
+#ifndef _WIN32
+	if (argc > 0) {
+		std::error_code error;
+		auto scriptPath = std::filesystem::weakly_canonical(std::filesystem::u8path(argv[0]), error);
+		auto runtimePath = scriptPath.parent_path().parent_path() / "runtime";
+		if (!error && std::filesystem::is_directory(runtimePath / "SimpleGraphic", error)) {
+			basePath = std::filesystem::weakly_canonical(runtimePath, error);
+		}
+	}
+#endif
+
 	initialised = false;
 	exitFlag = false;
 	restartFlag = false;

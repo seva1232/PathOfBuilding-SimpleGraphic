@@ -2172,14 +2172,19 @@ int ui_main_c::InitAPI(lua_State* L)
 	sol::state_view lua(L);
 	luaL_openlibs(L);
 
-	// Add "lua/" subdir for non-JIT Lua
+	// Add bundled and source-checkout Lua module paths.
 	{
 		lua_getglobal(L, "package");
-		char const* tn = lua_typename(L, -1);
 		lua_getfield(L, -1, "path");
 		std::string old_path = lua_tostring(L, -1);
 		lua_pop(L, 1);
 		old_path += ";lua/?.lua";
+		auto sourceRuntimeLua = GetUIPtr(L)->scriptPath.parent_path() / "runtime/lua";
+		std::error_code error;
+		if (std::filesystem::is_directory(sourceRuntimeLua, error)) {
+			auto runtimeLua = sourceRuntimeLua.generic_u8string();
+			old_path += ";" + runtimeLua + "/?.lua;" + runtimeLua + "/?/init.lua";
+		}
 		lua_pushstring(L, old_path.c_str());
 		lua_setfield(L, -2, "path");
 		lua_pop(L, 1);
@@ -2253,16 +2258,17 @@ int ui_main_c::InitAPI(lua_State* L)
 
 	sol::usertype<TextureInfo_s> textureInfoType = lua.new_usertype<TextureInfo_s>("TextureInfo");
 
-	textureInfoType["formatId"] = &TextureInfo_s::formatId;
-	textureInfoType["formatStr"] = &TextureInfo_s::formatStr;
-	textureInfoType["width"] = &TextureInfo_s::width;
-	textureInfoType["height"] = &TextureInfo_s::height;
-	textureInfoType["layerCount"] = &TextureInfo_s::layerCount;
-	textureInfoType["mipCount"] = &TextureInfo_s::mipCount;
-
+	textureInfoType["formatId"] = sol::property([](const TextureInfo_s& info) { return info.formatId; });
+	textureInfoType["formatStr"] = sol::property([](const TextureInfo_s& info) { return info.formatStr; });
+	textureInfoType["width"] = sol::property([](const TextureInfo_s& info) { return info.width; });
+	textureInfoType["height"] = sol::property([](const TextureInfo_s& info) { return info.height; });
+	textureInfoType["layerCount"] = sol::property([](const TextureInfo_s& info) { return info.layerCount; });
+	textureInfoType["mipCount"] = sol::property([](const TextureInfo_s& info) { return info.mipCount; });
 	// Rendering
 	ADDFUNC(RenderInit);
 	ADDFUNC(GetScreenSize);
+	lua_pushcclosure(L, l_GetScreenSize, 0);
+	lua_setglobal(L, "GetVirtualScreenSize");
 	ADDFUNC(GetScreenScale);
 	ADDFUNC(SetClearColor);
 	ADDFUNC(SetDrawLayer);

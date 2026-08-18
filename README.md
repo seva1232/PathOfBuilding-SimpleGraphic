@@ -37,6 +37,37 @@ A short guide on building and debugging the DLL is available in
 The `INSTALL` target will deploy the DLL, its dependencies and the VC++
 runtime to the installation directory.
 
+### Experimental native macOS build
+
+This fork can build an Apple Silicon `.app` that runs the Path of Building
+Lua frontend natively and renders it through ANGLE's Metal backend. The app is
+currently a development build: point it at the `Launch.lua` from a separate
+Path of Building `dev` checkout.
+
+Install the Xcode command-line tools and CMake, then run:
+
+```bash
+git submodule update --init --recursive
+./vcpkg/bootstrap-vcpkg.sh
+cmake -S . -B build/macos \
+  --toolchain vcpkg/scripts/buildsystems/vcpkg.cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DVCPKG_TARGET_TRIPLET=arm64-osx-dynamic
+cmake --build build/macos --target PathOfBuilding --parallel
+```
+
+Clone the Path of Building application sources and launch the native host:
+
+```bash
+git clone --branch dev https://github.com/PathOfBuildingCommunity/PathOfBuilding.git ../PathOfBuilding
+build/macos/PathOfBuilding.app/Contents/MacOS/PathOfBuilding \
+  ../PathOfBuilding/src/Launch.lua
+```
+
+The first dependency build is substantial because ANGLE is compiled from
+source. A self-contained distributable app bundle and the remaining macOS
+platform integrations are still in progress.
+
 ## Debugging
 
 Since SimpleGraphic.dll is dynamically loaded by `PathOfBuilding.exe`,

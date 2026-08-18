@@ -84,12 +84,12 @@ if (APPLE)
 endif()
 
 if (WIN32)
-    set (SIMPLEGRAPHIC_PLATFORM_SOURCES
+    list(APPEND SIMPLEGRAPHIC_PLATFORM_SOURCES
         "engine/system/win/sys_console.cpp"
         "SimpleGraphic.rc"
     )
 else()
-    set (SIMPLEGRAPHIC_PLATFORM_SOURCES
+    list(APPEND SIMPLEGRAPHIC_PLATFORM_SOURCES
         "engine/system/win/sys_console_unix.cpp"
     )
 endif()
@@ -98,6 +98,19 @@ add_library(SimpleGraphic SHARED
     ${SIMPLEGRAPHIC_SOURCES}
     ${SIMPLEGRAPHIC_PLATFORM_SOURCES}
 )
+
+if (APPLE)
+    add_executable(PathOfBuilding MACOSX_BUNDLE "macos/main.cpp")
+    target_link_libraries(PathOfBuilding PRIVATE SimpleGraphic)
+    set_target_properties(PathOfBuilding PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME "Path of Building Community"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "community.pathofbuilding.PathOfBuilding"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1"
+        BUILD_RPATH "@executable_path/../Frameworks"
+        INSTALL_RPATH "@executable_path/../Frameworks"
+    )
+endif()
 target_compile_definitions(SimpleGraphic
     PRIVATE
     "UNICODE"
@@ -115,6 +128,13 @@ target_include_directories(SimpleGraphic
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine"
 )
+
+if (NOT WIN32)
+    target_compile_options(SimpleGraphic PRIVATE
+        "$<$<COMPILE_LANGUAGE:C>:-include>"
+        "$<$<COMPILE_LANGUAGE:C>:string.h>"
+    )
+endif()
 
 find_package(unofficial-angle CONFIG REQUIRED)
 find_package(CURL CONFIG REQUIRED)
@@ -240,11 +260,27 @@ target_link_libraries(SimpleGraphic
     Threads::Threads
     WebP::webpdecoder
     ZLIB::ZLIB
-    zstd::libzstd_shared
+    zstd::libzstd
 )
 
+if (APPLE)
+    # GLFW loads EGL by its conventional filename at runtime. The vcpkg ANGLE
+    # port deliberately gives the library a distinct output name, so provide
+    # the filename GLFW expects alongside the build-tree libraries.
+    add_custom_command(TARGET PathOfBuilding POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:unofficial::angle::libEGL>"
+            "$<TARGET_FILE_DIR:SimpleGraphic>/libEGL.dylib"
+    )
+endif()
+
 install(FILES $<TARGET_RUNTIME_DLLS:SimpleGraphic> DESTINATION ".")
-install(TARGETS SimpleGraphic RUNTIME DESTINATION ".")
+if (APPLE)
+    install(TARGETS SimpleGraphic LIBRARY DESTINATION "PathOfBuilding.app/Contents/Frameworks")
+    install(TARGETS PathOfBuilding BUNDLE DESTINATION ".")
+else()
+    install(TARGETS SimpleGraphic RUNTIME DESTINATION ".")
+endif()
 
 if (WIN32)
     set(DEPS_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
@@ -283,6 +319,11 @@ set(LCURL_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/Lua-cURLv3)
 file(GLOB LCURL_SOURCES ${LCURL_SOURCE_DIR}/src/**.c)
 add_library(lcurl SHARED ${LCURL_SOURCES})
 
+target_compile_definitions(lcurl
+    PRIVATE
+    "luaL_setfuncs=lcurl_compat_setfuncs"
+)
+
 target_include_directories(lcurl
     PRIVATE
     ${LCURL_SOURCE_DIR}/src
@@ -301,10 +342,14 @@ install(FILES $<TARGET_RUNTIME_DLLS:lcurl> DESTINATION ".")
 
 add_library(lua-utf8 SHARED libs/luautf8/lutf8lib.c)
 
-target_compile_definitions(lua-utf8
-    PRIVATE
-    LUA_BUILD_AS_DLL
-)
+if (WIN32)
+    target_compile_definitions(lua-utf8
+        PRIVATE
+        LUA_BUILD_AS_DLL
+    )
+else()
+    target_compile_options(lua-utf8 PRIVATE -fms-extensions -include limits.h)
+endif ()
 
 target_include_directories(lua-utf8
     PRIVATE
@@ -333,8 +378,13 @@ add_library(luasocket SHARED
    "libs/luasocket/src/tcp.c"
    "libs/luasocket/src/timeout.c"
    "libs/luasocket/src/udp.c"
-   "libs/luasocket/src/wsocket.c"
 )
+
+if (WIN32)
+    target_sources(luasocket PRIVATE "libs/luasocket/src/wsocket.c")
+else()
+    target_sources(luasocket PRIVATE "libs/luasocket/src/usocket.c")
+endif()
 
 target_include_directories(luasocket
     PRIVATE
@@ -344,9 +394,11 @@ target_include_directories(luasocket
 target_link_libraries(luasocket
     PRIVATE
     LuaJIT::LuaJIT
-    wsock32
-    ws2_32
 )
+
+if (WIN32)
+    target_link_libraries(luasocket PRIVATE wsock32 ws2_32)
+endif()
 
 set_target_properties( luasocket PROPERTIES OUTPUT_NAME "socket" ) 
 install(TARGETS luasocket RUNTIME DESTINATION ".")

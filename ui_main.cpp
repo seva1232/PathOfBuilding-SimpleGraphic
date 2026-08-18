@@ -242,6 +242,11 @@ void ui_main_c::Init(int argc, char** argv)
 	// Load config files
 	core->config->LoadConfig("SimpleGraphic/SimpleGraphic.cfg");
 	core->config->LoadConfig("SimpleGraphic/SimpleGraphicAuto.cfg");
+#ifdef __APPLE__
+	if (sys->userPath) {
+		core->config->LoadConfig(*sys->userPath / "Path of Building/SimpleGraphic/SimpleGraphic.cfg");
+	}
+#endif
 	if (core->config->LoadConfig(scriptCfg)) {
 		scriptCfg.clear();
 	}
@@ -485,6 +490,15 @@ void ui_main_c::Shutdown()
 	}
 
 	// Save config
+#ifdef __APPLE__
+	if (sys->userPath) {
+		auto configDir = *sys->userPath / "Path of Building/SimpleGraphic";
+		std::error_code error;
+		std::filesystem::create_directories(configDir, error);
+		core->config->SaveConfig(configDir / "SimpleGraphic.cfg");
+	}
+	else
+#endif
 	if (!scriptCfg.empty()) {
 		core->config->SaveConfig(scriptCfg);
 	} else {

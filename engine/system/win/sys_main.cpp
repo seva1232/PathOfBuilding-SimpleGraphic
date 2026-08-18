@@ -617,6 +617,13 @@ std::tuple<std::optional<std::filesystem::path>, std::optional<std::string>> Fin
 	CoTaskMemFree(osPath);
 	std::filesystem::path path(pathStr);
 	return { weakly_canonical(path), {} };
+#elif defined(__APPLE__)
+	if (char const* home_path = getenv("HOME")) {
+		return { std::filesystem::path(home_path) / "Library/Application Support", {} };
+	}
+	uid_t uid = getuid();
+	struct passwd *pw = getpwuid(uid);
+	return { std::filesystem::path(pw->pw_dir) / "Library/Application Support", {} };
 #else
 	if (char const* data_home_path = getenv("XDG_DATA_HOME")) {
 		return { data_home_path, {} };
@@ -633,15 +640,11 @@ std::tuple<std::optional<std::filesystem::path>, std::optional<std::string>> Fin
 sys_main_c::sys_main_c()
 	: heldKeyState(KEY_SCROLL + 1, (uint8_t)0)
 {
-#ifdef _WIN64
-	x64 = true;
-#else
-	x64 = false;
-#endif
-#ifdef _DEBUG
-	debug = true;
-#else
+	x64 = sizeof(void*) == 8;
+#ifdef NDEBUG
 	debug = false;
+#else
+	debug = true;
 #endif
 #ifdef _WIN32
 	debuggerRunning = IsDebuggerPresent() == TRUE;

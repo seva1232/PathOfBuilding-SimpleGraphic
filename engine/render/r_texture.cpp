@@ -604,8 +604,17 @@ void r_tex_c::LoadFile()
 
 	auto raw = std::make_unique<image_c>();
 	raw->CopyRaw(IMGTYPE_GRAY, 8, 8, t_defaultTexture);
-	Upload(*raw, TF_NOMIPMAP);
-	status = DONE;
+	fileWidth = 8;
+	fileHeight = 8;
+	if (flags & TF_ASYNC) {
+		img = std::move(raw);
+		status = PENDING_UPLOAD;
+		manager->EnqueueTextureUpload(this);
+	}
+	else {
+		Upload(*raw, TF_NOMIPMAP);
+		status = DONE;
+	}
 }
 
 void r_tex_c::PerformUpload(r_tex_c* tex)

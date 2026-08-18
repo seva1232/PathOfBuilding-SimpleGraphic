@@ -2184,6 +2184,14 @@ int ui_main_c::InitAPI(lua_State* L)
 		if (std::filesystem::is_directory(sourceRuntimeLua, error)) {
 			auto runtimeLua = sourceRuntimeLua.generic_u8string();
 			old_path += ";" + runtimeLua + "/?.lua;" + runtimeLua + "/?/init.lua";
+			lua_getfield(L, -1, "cpath");
+			std::string old_cpath = lua_tostring(L, -1);
+			lua_pop(L, 1);
+			auto nativeLua = sourceRuntimeLua.parent_path() / "lua-native";
+			auto nativePath = nativeLua.generic_u8string();
+			old_cpath += ";" + nativePath + "/?.so";
+			lua_pushstring(L, old_cpath.c_str());
+			lua_setfield(L, -2, "cpath");
 		}
 		lua_pushstring(L, old_path.c_str());
 		lua_setfield(L, -2, "path");

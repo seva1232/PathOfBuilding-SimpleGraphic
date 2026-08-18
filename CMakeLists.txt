@@ -420,3 +420,46 @@ target_link_libraries(lzip
 
 install(TARGETS lzip RUNTIME DESTINATION ".")
 install(FILES $<TARGET_RUNTIME_DLLS:lzip> DESTINATION ".")
+
+if (APPLE)
+    set(POB_SOURCE_DIR "" CACHE PATH
+        "Path to a PathOfBuilding checkout containing src/Launch.lua and runtime")
+
+    if (POB_SOURCE_DIR AND EXISTS "${POB_SOURCE_DIR}/src/Launch.lua")
+        set(POB_STANDALONE_DIR "${CMAKE_BINARY_DIR}/standalone")
+        set(POB_STANDALONE_APP "${POB_STANDALONE_DIR}/Path of Building.app")
+        set(POB_STANDALONE_ARCHIVE "${POB_STANDALONE_DIR}/Path-of-Building-macOS.zip")
+        set(POB_VCPKG_LIBRARY_DIR
+            "$<IF:$<CONFIG:Debug>,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/lib,${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib>")
+
+        add_custom_target(PathOfBuildingStandalone
+            COMMAND ${CMAKE_COMMAND}
+                "-DSOURCE_APP=$<TARGET_BUNDLE_DIR:PathOfBuilding>"
+                "-DOUTPUT_APP=${POB_STANDALONE_APP}"
+                "-DPOB_SOURCE_DIR=${POB_SOURCE_DIR}"
+                "-DVCPKG_LIBRARY_DIR=${POB_VCPKG_LIBRARY_DIR}"
+                "-DSIMPLEGRAPHIC_LIBRARY=$<TARGET_FILE:SimpleGraphic>"
+                "-DEGL_LIBRARY=$<TARGET_FILE:unofficial::angle::libEGL>"
+                "-DLCURL_MODULE=$<TARGET_FILE:lcurl>"
+                "-DLZIP_MODULE=$<TARGET_FILE:lzip>"
+                "-DLUA_UTF8_MODULE=$<TARGET_FILE:lua-utf8>"
+                "-DSOCKET_MODULE=$<TARGET_FILE:luasocket>"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/macos/Bundle.cmake"
+            DEPENDS PathOfBuilding lcurl lzip lua-utf8 luasocket
+            COMMENT "Assembling standalone Path of Building.app"
+            VERBATIM
+        )
+
+        add_custom_target(PathOfBuildingStandaloneArchive
+            COMMAND ${CMAKE_COMMAND} -E tar cf "${POB_STANDALONE_ARCHIVE}"
+                --format=zip "Path of Building.app"
+            WORKING_DIRECTORY "${POB_STANDALONE_DIR}"
+            DEPENDS PathOfBuildingStandalone
+            COMMENT "Creating ${POB_STANDALONE_ARCHIVE}"
+            VERBATIM
+        )
+    else()
+        message(STATUS
+            "Set POB_SOURCE_DIR to a PathOfBuilding checkout to enable the standalone macOS bundle targets")
+    endif()
+endif()

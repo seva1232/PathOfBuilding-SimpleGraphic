@@ -13,6 +13,7 @@ std::filesystem::path FindBundledScript(const char* executable)
     const auto executablePath = std::filesystem::weakly_canonical(executable, error);
     const auto executableDir = error ? std::filesystem::current_path() : executablePath.parent_path();
     const std::filesystem::path candidates[] = {
+        executableDir / "../Resources/PathOfBuilding/src/Launch.lua",
         executableDir / "../Resources/Launch.lua",
         executableDir / "Launch.lua",
         std::filesystem::current_path() / "Launch.lua",

@@ -1082,6 +1082,9 @@ void r_renderer_c::Init(r_featureFlag_e features)
 
 	imguiCtx = ImGui::CreateContext();
 	ImGui::SetCurrentContext(imguiCtx);
+#ifdef __APPLE__
+	ImGui::GetIO().IniFilename = nullptr;
+#endif
 
 	ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)sys->video->GetWindowHandle(), true);
 	ImGui_ImplOpenGL3_Init("#version 100");

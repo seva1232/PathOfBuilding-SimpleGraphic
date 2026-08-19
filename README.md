@@ -10,6 +10,8 @@ Current status:
 
 - Apple Silicon (`arm64`) and macOS 13 or newer
 - the full Path of Building Lua application is bundled into the `.app`
+- `Check for Update` refreshes Path of Building Lua code and data from the
+  configured upstream branch; native host updates use this fork's releases
 - local builds receive an ad-hoc signature
 - the preview release is not notarised yet, so macOS may require opening it
   through the Finder context menu on first launch

@@ -19,6 +19,10 @@ if (NOT DEFINED OUTPUT_APP OR OUTPUT_APP STREQUAL "")
     message(FATAL_ERROR "OUTPUT_APP is not set")
 endif()
 
+if (NOT DEFINED POB_UPDATE_BRANCH OR POB_UPDATE_BRANCH STREQUAL "")
+    message(FATAL_ERROR "POB_UPDATE_BRANCH is not set")
+endif()
+
 set(contents_dir "${OUTPUT_APP}/Contents")
 set(frameworks_dir "${contents_dir}/Frameworks")
 set(pob_dir "${contents_dir}/Resources/PathOfBuilding")
@@ -32,6 +36,24 @@ file(COPY "${SOURCE_APP}/" DESTINATION "${OUTPUT_APP}")
 file(COPY "${POB_SOURCE_DIR}/src" DESTINATION "${pob_dir}")
 file(COPY "${POB_SOURCE_DIR}/runtime/SimpleGraphic" DESTINATION "${runtime_dir}")
 file(COPY "${POB_SOURCE_DIR}/runtime/lua" DESTINATION "${runtime_dir}")
+
+foreach(default_file changelog.txt help.txt LICENSE.md)
+    if (EXISTS "${POB_SOURCE_DIR}/${default_file}")
+        file(COPY_FILE
+            "${POB_SOURCE_DIR}/${default_file}"
+            "${pob_dir}/src/${default_file}"
+            ONLY_IF_DIFFERENT)
+    endif()
+endforeach()
+
+file(READ "${POB_SOURCE_DIR}/manifest.xml" pob_manifest)
+string(REGEX REPLACE
+    "<Version number=\"([^\"]+)\"[^>]*/>"
+    "<Version number=\"\\1\" branch=\"${POB_UPDATE_BRANCH}\" platform=\"macos\" />"
+    pob_manifest
+    "${pob_manifest}")
+file(WRITE "${pob_dir}/src/manifest.xml" "${pob_manifest}")
+file(WRITE "${pob_dir}/src/installed.cfg" "")
 
 file(COPY "${SIMPLEGRAPHIC_LIBRARY}" DESTINATION "${frameworks_dir}" FOLLOW_SYMLINK_CHAIN)
 

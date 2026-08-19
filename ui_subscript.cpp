@@ -295,6 +295,20 @@ static void l_hookStop(lua_State* L, lua_Debug* dbg)
 	lua_error(L);
 }
 
+static void copyPackageField(lua_State* source, lua_State* destination, const char* field)
+{
+	lua_getglobal(source, "package");
+	lua_getfield(source, -1, field);
+	const char* value = lua_tostring(source, -1);
+
+	lua_getglobal(destination, "package");
+	lua_pushstring(destination, value);
+	lua_setfield(destination, -2, field);
+	lua_pop(destination, 1);
+
+	lua_pop(source, 2);
+}
+
 // ===================
 // UI Sub Script Class
 // ===================
@@ -322,6 +336,8 @@ bool ui_subscript_c::Start()
 	// Add libraries and APIs
 	lua_gc(L, LUA_GCSTOP, 0);
 	luaL_openlibs(L);
+	copyPackageField(ui->L, L, "path");
+	copyPackageField(ui->L, L, "cpath");
 	lua_getglobal(L, "os");
 	lua_pushcfunction(L, l_os_exit);
 	lua_setfield(L, -2, "exit");

@@ -100,11 +100,19 @@ add_library(SimpleGraphic SHARED
 )
 
 if (APPLE)
-    add_executable(PathOfBuilding MACOSX_BUNDLE "macos/main.cpp")
+    set(POB_APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/macos/PathOfBuilding.icns")
+    set_source_files_properties("${POB_APP_ICON}" PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    add_executable(PathOfBuilding MACOSX_BUNDLE
+        "macos/main.cpp"
+        "${POB_APP_ICON}"
+    )
     target_link_libraries(PathOfBuilding PRIVATE SimpleGraphic)
     set_target_properties(PathOfBuilding PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME "Path of Building Community"
         MACOSX_BUNDLE_GUI_IDENTIFIER "community.pathofbuilding.PathOfBuilding"
+        MACOSX_BUNDLE_ICON_FILE "PathOfBuilding.icns"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
         MACOSX_BUNDLE_BUNDLE_VERSION "1"
         BUILD_RPATH "@executable_path/../Frameworks"

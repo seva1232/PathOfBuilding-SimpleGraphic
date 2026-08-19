@@ -424,7 +424,7 @@ install(FILES $<TARGET_RUNTIME_DLLS:lzip> DESTINATION ".")
 if (APPLE)
     set(POB_SOURCE_DIR "" CACHE PATH
         "Path to a PathOfBuilding checkout containing src/Launch.lua and runtime")
-    set(POB_UPDATE_BRANCH "dev" CACHE STRING
+    set(POB_UPDATE_BRANCH "macos-native" CACHE STRING
         "Path of Building branch used by the standalone app updater")
 
     if (POB_SOURCE_DIR AND EXISTS "${POB_SOURCE_DIR}/src/Launch.lua")

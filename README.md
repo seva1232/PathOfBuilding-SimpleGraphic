@@ -71,7 +71,7 @@ Install the Xcode command-line tools and CMake, then run:
 ```bash
 git submodule update --init --recursive
 ./vcpkg/bootstrap-vcpkg.sh
-git clone --branch dev https://github.com/PathOfBuildingCommunity/PathOfBuilding.git ../PathOfBuilding
+git clone --branch macos-native https://github.com/seva1232/PathOfBuilding.git ../PathOfBuilding
 cmake -S . -B build/macos \
   --toolchain vcpkg/scripts/buildsystems/vcpkg.cmake \
   -DCMAKE_BUILD_TYPE=Release \

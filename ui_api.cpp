@@ -1534,9 +1534,15 @@ static int l_SetWindowTitle(lua_State* L)
 static int l_GetCursorPos(lua_State* L)
 {
 	ui_main_c* ui = GetUIPtr(L);
+	auto& video = ui->sys->video->vid;
 	const float dpiScale = ui->renderer->VirtualScreenScaleFactor();
-	lua_pushinteger(L, (lua_Integer)std::lround(ui->renderer->VirtualMap(ui->cursorX) / dpiScale));
-	lua_pushinteger(L, (lua_Integer)std::lround(ui->renderer->VirtualMap(ui->cursorY) / dpiScale));
+	// GLFW cursor positions use window coordinates, while DPI-aware rendering uses framebuffer pixels.
+	const float framebufferScaleX = video.size[0] > 0 ? video.fbSize[0] / (float)video.size[0] : 1.0f;
+	const float framebufferScaleY = video.size[1] > 0 ? video.fbSize[1] / (float)video.size[1] : 1.0f;
+	const int framebufferX = (int)std::lround(ui->cursorX * framebufferScaleX);
+	const int framebufferY = (int)std::lround(ui->cursorY * framebufferScaleY);
+	lua_pushinteger(L, (lua_Integer)std::lround(ui->renderer->VirtualMap(framebufferX) / dpiScale));
+	lua_pushinteger(L, (lua_Integer)std::lround(ui->renderer->VirtualMap(framebufferY) / dpiScale));
 	return 2;
 }
 
@@ -1550,8 +1556,11 @@ static int l_SetCursorPos(lua_State* L)
 	ui->LAssert(L, lua_isnumber(L, 2), "SetCursorPos() argument 2: expected number, got %s", luaL_typename(L, 2));
 	const int scaledX = (int)std::lround(lua_tonumber(L, 1) * dpiScale);
 	const int scaledY = (int)std::lround(lua_tonumber(L, 2) * dpiScale);
-	int x = ui->renderer->VirtualUnmap(scaledX);
-	int y = ui->renderer->VirtualUnmap(scaledY);
+	auto& video = ui->sys->video->vid;
+	const float framebufferScaleX = video.size[0] > 0 ? video.fbSize[0] / (float)video.size[0] : 1.0f;
+	const float framebufferScaleY = video.size[1] > 0 ? video.fbSize[1] / (float)video.size[1] : 1.0f;
+	int x = (int)std::lround(ui->renderer->VirtualUnmap(scaledX) / framebufferScaleX);
+	int y = (int)std::lround(ui->renderer->VirtualUnmap(scaledY) / framebufferScaleY);
 	ui->sys->video->SetRelativeCursor(x, y);
 	return 0;
 }
